@@ -1,14 +1,28 @@
+// Helper function with timeout
+async function fetchWithTimeout(url, options = {}, timeout = 5000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
   let bcv = null, usdt = null, source = 'dolarapi';
 
   // Primary source: ve.dolarapi.com (reliable Venezuela rates)
   try {
-    const r = await fetch('https://ve.dolarapi.com/v1/dolares', {
+    const r = await fetchWithTimeout('https://ve.dolarapi.com/v1/dolares', {
       headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
+    }, 4000);
     const data = await r.json();
     
     if (Array.isArray(data)) {
@@ -30,9 +44,9 @@ export default async function handler(req, res) {
   // Fallback to Yadio if dolarapi fails
   if (!bcv) {
     try {
-      const r = await fetch('https://api.yadio.io/rate/USD/VES', {
+      const r = await fetchWithTimeout('https://api.yadio.io/rate/USD/VES', {
         headers: { 'User-Agent': 'Mozilla/5.0' }
-      });
+      }, 4000);
       const d = await r.json();
       // Yadio returns VES per USD inverted, so we need 1/rate
       if (d?.rate && d.rate > 0) {

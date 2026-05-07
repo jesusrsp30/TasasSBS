@@ -202,6 +202,29 @@
 
 <script>
   let bcv = null, usdt = null, mode = 'a';
+  
+  // Load cached rates immediately on page load
+  (function loadCachedRates() {
+    try {
+      const cached = localStorage.getItem('tasas_cache');
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data.bcv && data.usdt) {
+          bcv = data.bcv;
+          usdt = data.usdt;
+          document.getElementById('bcv-display').textContent = fmt(data.bcv);
+          document.getElementById('usdt-display').textContent = fmt(data.usdt);
+          document.getElementById('bcv-status').textContent = 'cargando actualización...';
+          document.getElementById('usdt-status').textContent = 'cargando actualización...';
+          // Update stats with cached data
+          const diff = data.usdt - data.bcv;
+          document.getElementById('stat-diff').textContent = fmt(Math.abs(diff));
+          document.getElementById('stat-pct').textContent = (diff >= 0 ? '+' : '') + ((diff/data.bcv)*100).toFixed(1) + '%';
+          document.getElementById('stat-factor').textContent = 'x' + (data.usdt/data.bcv).toFixed(3);
+        }
+      }
+    } catch(e) {}
+  })();
 
   function fmt(n, d = 2) {
     if (n === null || isNaN(n)) return '—';
@@ -236,7 +259,7 @@
       document.getElementById('brk-a').innerHTML =
         `Bs.${fmt(val)} ÷ ${fmt(usdt)} (USDT) = <b style="color:#f0f0f0">USD ${fmt(enUSDT,4)}</b><br>` +
         `A BCV oficial serían USD ${fmt(enBCV,4)}`;
-    } else {
+    } else if (mode === 'b') {
       const val = parseFloat(document.getElementById('inp-b').value);
       if (!val || !bcv || !usdt) {
         document.getElementById('out-b').textContent = '—';
@@ -265,6 +288,10 @@
 
   function applyRates(b, u, src) {
     bcv = b; usdt = u;
+    // Save to cache for instant load next time
+    try {
+      localStorage.setItem('tasas_cache', JSON.stringify({ bcv: b, usdt: u, source: src, ts: Date.now() }));
+    } catch(e) {}
     document.getElementById('bcv-display').textContent  = fmt(b);
     document.getElementById('usdt-display').textContent = fmt(u);
     const srcLabel = src === 'dolarapi' ? 'DolarAPI' : src;
