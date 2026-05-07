@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tasas Venezuela</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f11; --surface: #1a1a1f; --surface2: #232329;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0; --muted: #7a7a8a; --dim: #4a4a58;
+    --green: #22d3a0; --amber: #f5a623; --red: #ff5c5c;
+    --radius: 16px; --radius-sm: 10px;
+    --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
+  }
+  html, body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  .app { max-width: 430px; margin: 0 auto; padding: 0 0 48px; }
+
+  .header { padding: 52px 24px 24px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .header-left h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.6px; }
+  .header-left p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .refresh-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .refresh-btn:active { transform: scale(0.92); }
+  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .rates-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 24px 20px; }
+  .rate-pill { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 14px 12px; position: relative; overflow: hidden; }
+  .rate-pill::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 2px 2px 0 0; }
+  .rate-pill.bcv::before { background: var(--green); }
+  .rate-pill.usdt::before { background: var(--amber); }
+  .pill-label { font-size: 10px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .pill-value { font-family: var(--mono); font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .rate-pill.bcv .pill-value { color: var(--green); }
+  .rate-pill.usdt .pill-value { color: var(--amber); }
+  .pill-status { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .err-text { color: var(--red); }
+
+  .mode-wrap { padding: 0 24px 16px; }
+  .mode-toggle { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; padding: 4px; gap: 4px; }
+  .mode-btn { flex: 1; padding: 9px 6px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-family: var(--sans); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.18s; text-align: center; line-height: 1.3; }
+  .mode-btn.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+
+  .card { margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .field-label { font-size: 11px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .input-wrap { display: flex; align-items: center; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); overflow: hidden; transition: border-color 0.15s; }
+  .input-wrap:focus-within { border-color: rgba(255,255,255,0.28); }
+  .input-prefix { padding: 0 12px; font-size: 13px; color: var(--muted); border-right: 1px solid var(--border); height: 48px; display: flex; align-items: center; white-space: nowrap; flex-shrink: 0; }
+  .main-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 18px; font-weight: 500; padding: 0 14px; height: 48px; width: 0; }
+  .main-input::placeholder { color: var(--dim); }
+
+  .quick-row { display: flex; gap: 6px; margin-top: 10px; }
+  .quick-btn { flex: 1; padding: 7px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .quick-btn:active { background: var(--border2); color: var(--text); }
+
+  .arrow-sep { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 0; color: var(--dim); }
+  .arrow-sep::before, .arrow-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .result-box { background: var(--surface2); border-radius: var(--radius-sm); padding: 16px; border: 1px solid var(--border); }
+  .result-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 500; }
+  .result-value { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -0.8px; color: var(--text); line-height: 1; margin-bottom: 8px; }
+  .result-breakdown { font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 0 16px 12px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; }
+  .stat-label { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 500; }
+  .stat-val { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.amber { color: var(--amber); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 20px; width: 90px; display: inline-block; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <h1>Tasas Venezuela</h1>
+      <p id="last-update-txt">Obteniendo tasas...</p>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadRates()" title="Actualizar">
+      <svg id="refresh-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+        <path d="M8 16H3v5"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="rates-row">
+    <div class="rate-pill bcv">
+      <div class="pill-label">Tasa BCV</div>
+      <div class="pill-value" id="bcv-display"><span class="skeleton"></span></div>
+      <div class="pill-status" id="bcv-status">cargando...</div>
+    </div>
+    <div class="rate-pill usdt">
+      <div class="pill-label">USDT Binance</div>
+      <div class="pill-value" id="usdt-display"><span class="skeleton"></span></div>
+      <div class="pill-status" id="usdt-status">cargando...</div>
+    </div>
+  </div>
+
+  <div class="mode-wrap">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="tab-a" onclick="setMode('a')">Precio BCV<br>→ cuánto en USDT</button>
+      <button class="mode-btn" id="tab-b" onclick="setMode('b')">Costo USDT<br>→ precio BCV</button>
+    </div>
+  </div>
+
+  <div class="card panel active" id="panel-a">
+    <div class="field-label">Tu precio en bolívares (tasa BCV)</div>
+    <div class="input-wrap">
+      <span class="input-prefix">Bs.</span>
+      <input class="main-input" type="number" inputmode="decimal" id="inp-a" placeholder="0.00" oninput="calc()">
+    </div>
+    <div class="quick-row">
+      <button class="quick-btn" onclick="setQuick('a',100)">100</button>
+      <button class="quick-btn" onclick="setQuick('a',500)">500</button>
+      <button class="quick-btn" onclick="setQuick('a',1000)">1k</button>
+      <button class="quick-btn" onclick="setQuick('a',5000)">5k</button>
+      <button class="quick-btn" onclick="setQuick('a',10000)">10k</button>
+    </div>
+    <div class="arrow-sep">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+    <div class="result-box">
+      <div class="result-label">Equivale en USDT (Binance real)</div>
+      <div class="result-value" id="out-a">—</div>
+      <div class="result-breakdown" id="brk-a">Ingresa un monto arriba</div>
+    </div>
+  </div>
+
+  <div class="card panel" id="panel-b">
+    <div class="field-label">Tu costo en USD / USDT (reposición)</div>
+    <div class="input-wrap">
+      <span class="input-prefix">USD</span>
+      <input class="main-input" type="number" inputmode="decimal" id="inp-b" placeholder="0.00" oninput="calc()">
+    </div>
+    <div class="quick-row">
+      <button class="quick-btn" onclick="setQuick('b',1)">$1</button>
+      <button class="quick-btn" onclick="setQuick('b',5)">$5</button>
+      <button class="quick-btn" onclick="setQuick('b',10)">$10</button>
+      <button class="quick-btn" onclick="setQuick('b',50)">$50</button>
+      <button class="quick-btn" onclick="setQuick('b',100)">$100</button>
+    </div>
+    <div class="arrow-sep">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+    <div class="result-box">
+      <div class="result-label">Precio de venta en Bs. (tasa BCV)</div>
+      <div class="result-value" id="out-b">—</div>
+      <div class="result-breakdown" id="brk-b">Ingresa un monto arriba</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Diferencial</div>
+      <div class="stat-val amber" id="stat-diff">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">% sobre BCV</div>
+      <div class="stat-val green" id="stat-pct">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Factor x</div>
+      <div class="stat-val" id="stat-factor">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let bcv = null, usdt = null, mode = 'a';
+
+  function fmt(n, d = 2) {
+    if (n === null || isNaN(n)) return '—';
+    return n.toLocaleString('es-VE', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + m).classList.add('active');
+    document.getElementById('panel-' + m).classList.add('active');
+    calc();
+  }
+
+  function setQuick(panel, val) {
+    document.getElementById('inp-' + panel).value = val;
+    calc();
+  }
+
+  function calc() {
+    if (mode === 'a') {
+      const val = parseFloat(document.getElementById('inp-a').value);
+      if (!val || !bcv || !usdt) {
+        document.getElementById('out-a').textContent = '—';
+        document.getElementById('brk-a').textContent = (!bcv || !usdt) ? 'Cargando tasas...' : 'Ingresa un monto';
+        return;
+      }
+      const enUSDT = val / usdt;
+      const enBCV  = val / bcv;
+      document.getElementById('out-a').textContent = 'USD ' + fmt(enUSDT, 4);
+      document.getElementById('brk-a').innerHTML =
+        `Bs.${fmt(val)} ÷ ${fmt(usdt)} (USDT) = <b style="color:#f0f0f0">USD ${fmt(enUSDT,4)}</b><br>` +
+        `A BCV oficial serían USD ${fmt(enBCV,4)}`;
+    } else {
+      const val = parseFloat(document.getElementById('inp-b').value);
+      if (!val || !bcv || !usdt) {
+        document.getElementById('out-b').textContent = '—';
+        document.getElementById('brk-b').textContent = (!bcv || !usdt) ? 'Cargando tasas...' : 'Ingresa un monto';
+        return;
+      }
+      const bsBCV  = val * bcv;
+      const bsUSDT = val * usdt;
+      document.getElementById('out-b').textContent = 'Bs. ' + fmt(bsBCV);
+      document.getElementById('brk-b').innerHTML =
+        `USD ${fmt(val,2)} × ${fmt(bcv)} (BCV) = <b style="color:#f0f0f0">Bs. ${fmt(bsBCV)}</b><br>` +
+        `A USDT Binance corresponde Bs. ${fmt(bsUSDT)}`;
+    }
+  }
+
+  function applyRates(b, u, src) {
+    bcv = b; usdt = u;
+    document.getElementById('bcv-display').textContent  = fmt(b);
+    document.getElementById('usdt-display').textContent = fmt(u);
+    document.getElementById('bcv-status').textContent   = '✓ ' + src + ' · oficial';
+    document.getElementById('usdt-status').textContent  = '✓ ' + src + ' · Binance P2P';
+    const diff = u - b;
+    document.getElementById('stat-diff').textContent   = fmt(Math.abs(diff));
+    document.getElementById('stat-pct').textContent    = (diff >= 0 ? '+' : '') + ((diff/b)*100).toFixed(1) + '%';
+    document.getElementById('stat-factor').textContent = 'x' + (u/b).toFixed(3);
+    const now = new Date();
+    document.getElementById('last-update-txt').textContent =
+      'Actualizado ' + now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+    calc();
+  }
+
+  async function loadRates() {
+    const btn = document.getElementById('refresh-btn');
+    btn.classList.add('spinning');
+    document.getElementById('last-update-txt').textContent = 'Actualizando...';
+    try {
+      const res  = await fetch('/api/rates');
+      const data = await res.json();
+      if (data.bcv && data.usdt) {
+        applyRates(data.bcv, data.usdt, data.source || 'Yadio');
+      } else throw new Error('sin tasas');
+    } catch(e) {
+      document.getElementById('bcv-status').innerHTML  = '<span style="color:var(--red)">✗ Error al cargar</span>';
+      document.getElementById('usdt-status').innerHTML = '<span style="color:var(--red)">✗ Error al cargar</span>';
+      document.getElementById('last-update-txt').textContent = 'Error — reintentando...';
+      setTimeout(loadRates, 10000);
+    }
+    btn.classList.remove('spinning');
+  }
+
+  loadRates();
+  setInterval(loadRates, 5 * 60 * 1000);
+</script>
+</body>
+</html>
