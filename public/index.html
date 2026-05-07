@@ -154,7 +154,7 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
     </div>
     <div class="result-box">
-      <div class="result-label">Precio de venta en Bs. (tasa BCV)</div>
+      <div class="result-label">Precio de venta en Bs. (tasa Binance)</div>
       <div class="result-value" id="out-b">—</div>
       <div class="result-breakdown" id="brk-b">Ingresa un monto arriba</div>
     </div>
@@ -221,10 +221,10 @@
       }
       const bsBCV  = val * bcv;
       const bsUSDT = val * usdt;
-      document.getElementById('out-b').textContent = 'Bs. ' + fmt(bsBCV);
+      document.getElementById('out-b').textContent = 'Bs. ' + fmt(bsUSDT);
       document.getElementById('brk-b').innerHTML =
-        `USD ${fmt(val,2)} × ${fmt(bcv)} (BCV) = <b style="color:#f0f0f0">Bs. ${fmt(bsBCV)}</b><br>` +
-        `A USDT Binance corresponde Bs. ${fmt(bsUSDT)}`;
+        `USD ${fmt(val,2)} × ${fmt(usdt)} (Binance) = <b style="color:#f0f0f0">Bs. ${fmt(bsUSDT)}</b><br>` +
+        `A tasa BCV oficial serían Bs. ${fmt(bsBCV)}`;
     }
   }
 
