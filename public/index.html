@@ -110,7 +110,8 @@
   <div class="mode-wrap">
     <div class="mode-toggle">
       <button class="mode-btn active" id="tab-a" onclick="setMode('a')">Precio BCV<br>→ cuánto en USDT</button>
-      <button class="mode-btn" id="tab-b" onclick="setMode('b')">Costo USDT<br>→ precio BCV</button>
+      <button class="mode-btn" id="tab-b" onclick="setMode('b')">Costo USDT<br>→ precio Binance</button>
+      <button class="mode-btn" id="tab-c" onclick="setMode('c')">Dólares BCV<br>→ Bolívares</button>
     </div>
   </div>
 
@@ -157,6 +158,29 @@
       <div class="result-label">Precio de venta en Bs. (tasa Binance)</div>
       <div class="result-value" id="out-b">—</div>
       <div class="result-breakdown" id="brk-b">Ingresa un monto arriba</div>
+    </div>
+  </div>
+
+  <div class="card panel" id="panel-c">
+    <div class="field-label">Monto en Dólares (tasa BCV)</div>
+    <div class="input-wrap">
+      <span class="input-prefix">USD</span>
+      <input class="main-input" type="number" inputmode="decimal" id="inp-c" placeholder="0.00" oninput="calc()">
+    </div>
+    <div class="quick-row">
+      <button class="quick-btn" onclick="setQuick('c',1)">$1</button>
+      <button class="quick-btn" onclick="setQuick('c',5)">$5</button>
+      <button class="quick-btn" onclick="setQuick('c',10)">$10</button>
+      <button class="quick-btn" onclick="setQuick('c',50)">$50</button>
+      <button class="quick-btn" onclick="setQuick('c',100)">$100</button>
+    </div>
+    <div class="arrow-sep">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+    <div class="result-box">
+      <div class="result-label">Equivalente en Bolívares (tasa BCV)</div>
+      <div class="result-value" id="out-c">—</div>
+      <div class="result-breakdown" id="brk-c">Ingresa un monto arriba</div>
     </div>
   </div>
 
@@ -225,6 +249,17 @@
       document.getElementById('brk-b').innerHTML =
         `USD ${fmt(val,2)} × ${fmt(usdt)} (Binance) = <b style="color:#f0f0f0">Bs. ${fmt(bsUSDT)}</b><br>` +
         `A tasa BCV oficial serían Bs. ${fmt(bsBCV)}`;
+    } else if (mode === 'c') {
+      const val = parseFloat(document.getElementById('inp-c').value);
+      if (!val || !bcv) {
+        document.getElementById('out-c').textContent = '—';
+        document.getElementById('brk-c').textContent = (!bcv) ? 'Cargando tasas...' : 'Ingresa un monto';
+        return;
+      }
+      const bsBCV = val * bcv;
+      document.getElementById('out-c').textContent = 'Bs. ' + fmt(bsBCV);
+      document.getElementById('brk-c').innerHTML =
+        `USD ${fmt(val,2)} × ${fmt(bcv)} (BCV) = <b style="color:#f0f0f0">Bs. ${fmt(bsBCV)}</b>`;
     }
   }
 
