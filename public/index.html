@@ -232,8 +232,9 @@
     bcv = b; usdt = u;
     document.getElementById('bcv-display').textContent  = fmt(b);
     document.getElementById('usdt-display').textContent = fmt(u);
-    document.getElementById('bcv-status').textContent   = '✓ ' + src + ' · oficial';
-    document.getElementById('usdt-status').textContent  = '✓ ' + src + ' · Binance P2P';
+    const srcLabel = src === 'dolarapi' ? 'DolarAPI' : src;
+    document.getElementById('bcv-status').textContent   = '✓ ' + srcLabel + ' · oficial';
+    document.getElementById('usdt-status').textContent  = '✓ ' + srcLabel + ' · paralelo';
     const diff = u - b;
     document.getElementById('stat-diff').textContent   = fmt(Math.abs(diff));
     document.getElementById('stat-pct').textContent    = (diff >= 0 ? '+' : '') + ((diff/b)*100).toFixed(1) + '%';

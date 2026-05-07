@@ -2,31 +2,51 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
 
-  let bcv = null, usdt = null, source = 'yadio';
+  let bcv = null, usdt = null, source = 'dolarapi';
 
+  // Primary source: ve.dolarapi.com (reliable Venezuela rates)
   try {
-    const r = await fetch('https://api.yadio.io/exrates/VES', {
+    const r = await fetch('https://ve.dolarapi.com/v1/dolares', {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
     const data = await r.json();
-    if (data?.VES?.BCV)  bcv  = parseFloat(data.VES.BCV);
-    if (data?.VES?.USDT) usdt = parseFloat(data.VES.USDT);
-  } catch (e) {}
+    
+    if (Array.isArray(data)) {
+      // Find oficial (BCV) rate
+      const oficial = data.find(d => d.fuente === 'oficial');
+      if (oficial?.promedio) {
+        bcv = parseFloat(oficial.promedio);
+      }
+      // Find paralelo (USDT/Binance) rate
+      const paralelo = data.find(d => d.fuente === 'paralelo');
+      if (paralelo?.promedio) {
+        usdt = parseFloat(paralelo.promedio);
+      }
+    }
+  } catch (e) {
+    console.error('[v0] dolarapi error:', e.message);
+  }
 
-  // Fallback individual endpoints
+  // Fallback to Yadio if dolarapi fails
   if (!bcv) {
     try {
-      const r = await fetch('https://api.yadio.io/rate/USD/VES');
+      const r = await fetch('https://api.yadio.io/rate/USD/VES', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
       const d = await r.json();
-      if (d?.rate) bcv = parseFloat(d.rate);
-    } catch(e) {}
+      // Yadio returns VES per USD inverted, so we need 1/rate
+      if (d?.rate && d.rate > 0) {
+        bcv = 1 / parseFloat(d.rate);
+        source = 'yadio';
+      }
+    } catch(e) {
+      console.error('[v0] yadio USD error:', e.message);
+    }
   }
-  if (!usdt) {
-    try {
-      const r = await fetch('https://api.yadio.io/rate/USDT/VES');
-      const d = await r.json();
-      if (d?.rate) usdt = parseFloat(d.rate);
-    } catch(e) {}
+
+  // If still no USDT, use BCV as fallback
+  if (!usdt && bcv) {
+    usdt = bcv;
   }
 
   if (!bcv && !usdt) {
